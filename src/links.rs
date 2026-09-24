@@ -17,6 +17,11 @@ const ALLOWED_DOMAINS: &[&str] = &[
     "gstatic.com",
     "googleapis.com",
     "googleusercontent.com",
+    // Google short links and its own gTLD (about.google, families.google)
+    // show up in YouTube's account/country help flows.
+    "g.co",
+    "goo.gl",
+    "google",
     // The in-app settings page is served from the youtube-glass custom
     // protocol as http://youtube-glass.settings/... on Windows. It's our own
     // origin, navigated only from the tray menu, so it must clear the
@@ -66,6 +71,10 @@ pub fn is_allowed(url: &str) -> bool {
 /// parsing involved, so this is safe even for untrusted, attacker-controlled
 /// URLs from page content).
 pub fn open_external(url: &str) {
+    crate::logging::log(format!(
+        "opening outside the app: {}",
+        host_of(url).unwrap_or_else(|| "<non-http>".to_string())
+    ));
     let operation = HSTRING::from("open");
     let file = HSTRING::from(url);
     unsafe {
@@ -124,6 +133,9 @@ mod tests {
         assert!(is_allowed("https://i.ytimg.com/vi/x/hq.jpg"));
         assert!(is_allowed("chrome-extension://abc/page.html")); // internal
         assert!(is_allowed("about:blank"));
+        assert!(is_allowed("https://www.youtube.com/?persist_gl=1&gl=DE"));
+        assert!(is_allowed("https://families.google/families/"));
+        assert!(is_allowed("https://g.co/YouTubeHelp"));
         assert!(!is_allowed("https://example.com/"));
         // Suffix spoofing must not pass.
         assert!(!is_allowed("https://fakeyoutube.com/"));
