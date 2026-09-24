@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIL Doctor</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f5f7;
+    --surface-2: #ebebf0;
+    --line: #e5e5ea;
+    --line-strong: #d2d2d7;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --critical: #d70015;
+    --warning: #b25000;
+    --info: #0066cc;
+    --ok: #248a3d;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --radius: 14px;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body, #app { margin: 0; height: 100%; background: var(--bg); }
+
+  body {
+    font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    user-select: none;
+    cursor: default;
+  }
+
+  .selectable, .selectable * { user-select: text; cursor: text; }
+
+  h1, h2, h3, p { margin: 0; }
+
+  .display {
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:focus-visible, .switch input:focus-visible + .track {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+  }
+
+  /* Buttons: feedback on press, not on release. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 980px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 100ms ease-out, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn[disabled] { opacity: 0.4; pointer-events: none; }
+  .btn-primary { background: var(--text); color: #fff; }
+  .btn-secondary { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .btn-plain { height: auto; padding: 8px 4px; color: var(--info); font-weight: 500; }
+  .btn-lg { height: 48px; padding: 0 28px; font-size: 16px; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background: #000; }
+    .btn-secondary:hover { background: var(--surface); }
+    .btn-plain:hover { text-decoration: underline; text-underline-offset: 3px; }
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--text-3); }
+  .dot.critical { background: var(--critical); }
+  .dot.warning { background: var(--warning); }
+  .dot.info { background: var(--info); }
+  .dot.ok { background: var(--ok); }
+
+  .spinner {
+    width: 14px; height: 14px; flex: none;
+    border-radius: 50%;
+    border: 1.5px solid var(--line-strong);
+    border-top-color: var(--text);
+    animation: spin 800ms linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Welcome ---------- */
+
+  .welcome {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 40px;
+  }
+  .welcome-inner { width: min(520px, 100%); }
+  .mark {
+    width: 52px; height: 52px;
+    border-radius: 13px;
+    background: var(--text);
+    color: #fff;
+    display: grid; place-items: center;
+    font: 700 15px/1 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+    margin-bottom: 28px;
+  }
+  .welcome h1 { font-size: 40px; }
+  .lede { margin-top: 14px; font-size: 17px; line-height: 1.5; color: var(--text-2); }
+
+  .group {
+    margin-top: 32px;
+    background: var(--surface);
+    border-radius: var(--radius);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    min-height: 64px;
+  }
+  .row + .row { box-shadow: inset 0 1px 0 var(--line); }
+  .row-text { flex: 1; min-width: 0; }
+  .row-title { font-weight: 600; }
+  .row-sub { margin-top: 2px; font-size: 13px; color: var(--text-2); }
+  .row-status { display: inline-flex; align-items: center; gap: 6px; }
+
+  .switch { position: relative; flex: none; display: inline-flex; }
+  .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .track {
+    width: 44px; height: 26px;
+    border-radius: 13px;
+    background: var(--line-strong);
+    transition: background-color 200ms ease;
+  }
+  .track::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 200ms var(--ease-out);
+  }
+  .switch input:checked + .track { background: var(--text); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:disabled + .track { opacity: 0.4; }
+  .switch input:disabled { cursor: default; }
+
+  .welcome-actions { margin-top: 32px; display: flex; align-items: center; gap: 20px; }
+  .fine { font-size: 12px; color: var(--text-3); }
+
+  /* ---------- Shell ---------- */
+
+  .shell { display: none; height: 100%; grid-template-columns: 300px 1fr; }
+  [data-screen="scan"] .welcome { display: none; }
+  [data-screen="scan"] .shell { display: grid; animation: enter 300ms var(--ease-out) both; }
+
+  .sidebar {
+    background: var(--surface);
+    box-shadow: inset -1px 0 0 var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 22px 20px 14px;
+    font-weight: 600;
+  }
+  .brand .mark { width: 28px; height: 28px; border-radius: 7px; font-size: 9px; margin: 0; }
+  nav { flex: 1; overflow-y: auto; padding: 4px 10px 12px; }
+  .nav-sep { height: 1px; background: var(--line); margin: 8px 10px; }
+  .nav-item {
+    width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    text-align: left;
+  }
+  .nav-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-item.pending .name { color: var(--text-3); }
+  .nav-item.pending { cursor: default; }
+  .nav-item[aria-current="true"] { background: var(--surface-2); font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-item:not(.pending):not([aria-current="true"]):hover { background: rgba(0, 0, 0, 0.04); }
+  }
+  .state { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 20px; font-size: 12px; font-weight: 600; }
+  .state.critical { color: var(--critical); }
+  .state.warning { color: var(--warning); }
+  .state.none { color: var(--text-3); font-weight: 400; }
+  .state svg { display: block; }
+  .state > * { animation: fade 150ms ease both; }
+  .side-foot { padding: 14px 20px 18px; font-size: 12px; color: var(--text-3); box-shadow: inset 0 1px 0 var(--line); }
+
+  .content { overflow-y: auto; min-height: 0; }
+  .page { max-width: 760px; margin: 0 auto; padding: 44px 48px 64px; }
+  .eyebrow { font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .page h1 { margin-top: 6px; font-size: 32px; }
+  .meta { margin-top: 10px; color: var(--text-2); }
+
+  .progress { margin-top: 28px; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+  .progress > div {
+    height: 100%;
+    background: var(--text);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 400ms var(--ease-out);
+  }
+  .now { margin-top: 14px; color: var(--text-2); min-height: 20px; }
+  .hint { margin-top: 40px; padding: 16px 18px; border-radius: var(--radius); background: var(--surface); color: var(--text-2); }
+
+  .score { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; }
+  .score-num { font-size: 72px; line-height: 1; }
+  .score-of { font-size: 20px; color: var(--text-3); font-weight: 500; }
+  .verdict { margin-top: 10px; font-size: 22px; }
+
+  .stats { margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-num { font-size: 26px; }
+  .stat-label { margin-top: 4px; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
+
+  .h2 { margin-top: 40px; font-size: 20px; }
+  .h2 + * { margin-top: 14px; }
+
+  .list { background: var(--surface); border-radius: var(--radius); }
+  .item { display: flex; gap: 12px; padding: 16px 18px; text-align: left; width: 100%; }
+  .item + .item { box-shadow: inset 0 1px 0 var(--line); }
+  .item .dot { margin-top: 6px; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-title { font-weight: 600; }
+  .item-where { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .item-text { margin-top: 6px; color: var(--text-2); }
+  button.item { border-radius: 0; }
+  button.item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+  button.item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  button.item:only-child { border-radius: var(--radius); }
+  @media (hover: hover) and (pointer: fine) {
+    button.item:hover { background: var(--surface-2); }
+  }
+  .chev { color: var(--text-3); align-self: center; }
+
+  .calm { background: var(--surface); border-radius: var(--radius); padding: 18px; display: flex; gap: 12px; align-items: center; }
+
+  .actions { margin-top: 40px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .path { margin-top: 12px; font-size: 12px; color: var(--text-3); word-break: break-all; }
+
+  .finding { background: var(--surface); border-radius: var(--radius); padding: 18px; display: flex; gap: 12px; }
+  .finding + .finding { margin-top: 10px; }
+  .finding .dot { margin-top: 7px; }
+  .finding-title { font-weight: 600; font-size: 15px; }
+  .details { margin: 8px 0 0; padding: 0; list-style: none; color: var(--text-2); }
+  .details li + li { margin-top: 2px; }
+  .details li { overflow-wrap: anywhere; }
+  .fix { margin-top: 12px; padding-top: 12px; box-shadow: inset 0 1px 0 var(--line); }
+  .fix-label { font-size: 12px; font-weight: 600; color: var(--text-3); }
+  .fix-text { margin-top: 2px; }
+
+  .facts { background: var(--surface); border-radius: var(--radius); }
+  .fact { display: flex; gap: 24px; padding: 12px 18px; }
+  .fact + .fact { box-shadow: inset 0 1px 0 var(--line); }
+  .fact-k { width: 38%; flex: none; color: var(--text-2); }
+  .fact-v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  .oks { background: var(--surface); border-radius: var(--radius); padding: 6px 0; }
+  .ok-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 18px; }
+  .ok-row svg { margin-top: 3px; flex: none; }
+
+  .note { margin-top: 20px; padding: 14px 18px; border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-2); font-size: 13px; }
+
+  /* Results arrive once per scan, so they may stagger in. */
+  .reveal { animation: enter 300ms var(--ease-out) both; }
+
+  @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-screen="scan"] .shell, .reveal { animation-name: fade; animation-duration: 200ms; }
+    .spinner { animation-duration: 2400ms; }
+    .progress > div { transition-duration: 0ms; }
+  }
+
+  @media (prefers-contrast: more) {
+    :root { --line: #aeaeb2; --line-strong: #8e8e93; --text-2: #3a3a3c; --text-3: #48484a; }
+  }
+</style>
+</head>
+<body>
+<div id="app" data-screen="welcome">
+  <section class="welcome">
+    <div class="welcome-inner">
+      <div class="mark" aria-hidden="true">VIL</div>
+      <h1 class="display">Проверка Windows</h1>
+      <p class="lede">Тринадцать проверок: системные файлы, диски, драйверы, безопасность, обновления и сбои. Программа только читает данные — ничего не меняет.</p>
+
+      <div class="group">
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Права администратора</div>
+            <div class="row-sub" id="adminSub">Проверяю…</div>
+          </div>
+          <span class="row-status" id="adminStatus"></span>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Глубокая проверка образа Windows</div>
+            <div class="row-sub" id="deepSub">DISM ScanHealth · добавляет 5–20 минут</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="deep" role="switch" aria-label="Глубокая проверка образа Windows">
+            <span class="track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="welcome-actions">
+        <button class="btn btn-primary btn-lg" id="start" disabled>Начать проверку</button>
+        <span class="fine" id="version"></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="mark" aria-hidden="true">VIL</div>VIL Doctor</div>
+      <nav id="nav" aria-label="Разделы"></nav>
+      <div class="side-foot" id="sideFoot"></div>
+    </aside>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const post = (msg) => window.ipc && window.ipc.postMessage(JSON.stringify(msg));
+
+  const S = {
+    admin: false, version: '', computer: '', labels: [],
+    sections: [], running: new Set(), done: false, final: null, selected: 'overview',
+  };
+
+  const SEV_ORDER = { critical: 0, warning: 1, info: 2, ok: 3 };
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function svg(markup) {
+    const t = document.createElement('template');
+    t.innerHTML = markup.trim();
+    return t.content.firstChild;
+  }
+  const CHECK = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.4 5.8 10 11 4" fill="none" stroke="#248a3d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const CHEV = '<svg class="chev" width="8" height="13" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5 1.5 11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function plural(n, one, few, many) {
+    const a = n % 10, b = n % 100;
+    if (a === 1 && b !== 11) return one;
+    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+    return many;
+  }
+
+  // ---------- Welcome ----------
+
+  function renderWelcome() {
+    const status = $('adminStatus');
+    status.replaceChildren();
+    if (S.admin) {
+      $('adminSub').textContent = 'Есть — будут выполнены все проверки';
+      status.append(el('span', 'dot ok'), el('span', null, 'Есть'));
+    } else {
+      $('adminSub').textContent = 'Нет — часть проверок будет пропущена';
+      const b = el('button', 'btn btn-secondary', 'Запросить права');
+      b.id = 'elevate';
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        b.textContent = 'Подтвердите запрос Windows…';
+        post({ cmd: 'elevate' });
+      });
+      status.append(b);
+    }
+    $('deep').disabled = !S.admin;
+    $('deepSub').textContent = S.admin
+      ? 'DISM ScanHealth · добавляет 5–20 минут'
+      : 'Доступна только с правами администратора';
+    $('version').textContent = 'Версия ' + S.version;
+    $('start').disabled = false;
+  }
+
+  $('start').addEventListener('click', () => {
+    S.sections = S.labels.map(() => null);
+    S.running.clear();
+    S.done = false;
+    S.final = null;
+    S.selected = 'overview';
+    $('app').dataset.screen = 'scan';
+    renderNav();
+    renderContent();
+    post({ cmd: 'start', deep: $('deep').checked });
+  });
+
+  // ---------- Sidebar ----------
+
+  function stateFor(i) {
+    const s = S.sections[i];
+    const box = el('span', 'state');
+    if (!s) {
+      if (S.running.has(i)) box.append(el('span', 'spinner'));
+      return box;
+    }
+    const count = s.findings.filter((f) => f.sev === s.status).length;
+    if (s.status === 'critical' || s.status === 'warning') {
+      box.classList.add(s.status);
+      box.append(el('span', 'dot ' + s.status), el('span', null, String(count)));
+    } else if (s.status === 'none') {
+      box.classList.add('none');
+      box.append(el('span', null, '—'));
+    } else {
+      box.append(svg(CHECK));
+    }
+    return box;
+  }
+
+  function navButton(key, name, pending) {
+    const b = el('button', 'nav-item' + (pending ? ' pending' : ''));
+    b.dataset.key = key;
+    b.append(el('span', 'name', name));
+    if (S.selected === key) b.setAttribute('aria-current', 'true');
+    b.addEventListener('click', () => {
+      if (b.classList.contains('pending')) return;
+      S.selected = key;
+      renderNav();
+      renderContent();
+      $('content').scrollTop = 0;
+    });
+    return b;
+  }
+
+  function renderNav() {
+    const nav = $('nav');
+    const items = [navButton('overview', S.done ? 'Итог' : 'Обзор', false), el('div', 'nav-sep')];
+    S.labels.forEach((label, i) => {
+      const b = navButton(String(i), label, !S.sections[i]);
+      b.append(stateFor(i));
+      items.push(b);
+    });
+    nav.replaceChildren(...items);
+    $('sideFoot').textContent = (S.computer ? S.computer + ' · ' : '') + (S.admin ? 'администратор' : 'без прав администратора');
+  }
+
+  function updateNavItem(i) {
+    const old = $('nav').querySelector(`[data-key="${i}"]`);
+    if (!old) return renderNav();
+    const b = navButton(String(i), S.labels[i], !S.sections[i]);
+    b.append(stateFor(i));
+    old.replaceWith(b);
+  }
+
+  // ---------- Content ----------
+
+  function renderContent() {
+    const c = $('content');
+    if (S.selected === 'overview') {
+      c.replaceChildren(S.done ? resultsPage() : progressPage());
+      if (!S.done) updateProgress();
+    } else {
+      c.replaceChildren(sectionPage(Number(S.selected)));
+    }
+  }
+
+  function progressPage() {
+    const p = el('div', 'page');
+    p.append(el('div', 'eyebrow', 'Обзор'));
+    p.append(el('h1', 'display', 'Идёт проверка'));
+    const meta = el('p', 'meta');
+    meta.id = 'progressMeta';
+    p.append(meta);
+    const bar = el('div', 'progress');
+    const fill = el('div');
+    fill.id = 'progressFill';
+    bar.append(fill);
+    p.append(bar);
+    const now = el('p', 'now');
+    now.id = 'progressNow';
+    p.append(now);
+    p.append(el('p', 'hint', 'Готовые разделы можно открыть слева, не дожидаясь конца. Окно можно свернуть — проверка продолжится.'));
+    return p;
+  }
+
+  function updateProgress() {
+    const n = S.labels.length;
+    const done = S.sections.filter(Boolean).length;
+    const meta = $('progressMeta');
+    if (!meta) return;
+    meta.textContent = `Готово ${done} из ${n}`;
+    // Paint once at 0 so the first update transitions instead of jumping.
+    requestAnimationFrame(() => { $('progressFill').style.transform = `scaleX(${done / n})`; });
+    const names = [...S.running].filter((i) => !S.sections[i]).map((i) => S.labels[i]);
+    $('progressNow').textContent = names.length ? 'Сейчас: ' + names.join(', ') : '';
+  }
+
+  function topFindings() {
+    const out = [];
+    S.sections.forEach((s, i) => {
+      if (!s) return;
+      s.findings.forEach((f) => {
+        if (f.sev === 'critical' || f.sev === 'warning') out.push({ f, i, section: s.title });
+      });
+    });
+    out.sort((a, b) => SEV_ORDER[a.f.sev] - SEV_ORDER[b.f.sev]);
+    return out;
+  }
+
+  function stagger(nodes, step = 40) {
+    nodes.forEach((n, k) => {
+      n.classList.add('reveal');
+      n.style.animationDelay = `${Math.min(k, 8) * step}ms`;
+    });
+  }
+
+  function tick(node, to) {
+    if (reduce.matches) { node.textContent = to; return; }
+    const start = performance.now(), dur = 700;
+    const step = (t) => {
+      const k = Math.min(1, (t - start) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      node.textContent = Math.round(to * eased);
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  function resultsPage() {
+    const F = S.final, t = F.totals;
+    const p = el('div', 'page');
+    const head = el('div');
+    head.append(el('div', 'eyebrow', 'Итог проверки'));
+    const score = el('div', 'score');
+    const num = el('span', 'score-num display', '0');
+    score.append(num, el('span', 'score-of', '/ 100'));
+    head.append(score);
+    head.append(el('h1', 'verdict display', t.verdict));
+    const bits = [F.os, S.computer, `проверено за ${F.seconds} с`].filter(Boolean);
+    head.append(el('p', 'meta', bits.join(' · ')));
+
+    const stats = el('div', 'stats');
+    [['critical', t.critical, 'Критично'], ['warning', t.warning, 'Внимание'], ['info', t.info, 'Советы'], ['ok', t.ok, 'В порядке']].forEach(([k, n, label]) => {
+      const card = el('div', 'stat');
+      card.append(el('div', 'stat-num display', String(n)));
+      const l = el('div', 'stat-label');
+      l.append(el('span', 'dot ' + k), el('span', null, label));
+      card.append(l);
+      stats.append(card);
+    });
+
+    const blocks = [head, stats];
+    const top = topFindings();
+    if (top.length) {
+      blocks.push(el('h2', 'h2 display', 'Что сделать в первую очередь'));
+      const list = el('div', 'list');
+      top.slice(0, 8).forEach(({ f, i, section }) => {
+        const b = el('button', 'item');
+        b.append(el('span', 'dot ' + f.sev));
+        const body = el('div', 'item-body');
+        body.append(el('div', 'item-title', f.title), el('div', 'item-where', section));
+        if (f.fix) body.append(el('div', 'item-text', f.fix));
+        b.append(body, svg(CHEV));
+        b.addEventListener('click', () => { S.selected = String(i); renderNav(); renderContent(); $('content').scrollTop = 0; });
+        list.append(b);
+      });
+      blocks.push(list);
+      if (top.length > 8) blocks.push(el('p', 'path', `Ещё ${top.length - 8} ${plural(top.length - 8, 'пункт', 'пункта', 'пунктов')} — в разделах слева и в отчёте.`));
+    } else {
+      const calm = el('div', 'calm');
+      calm.style.marginTop = '28px';
+      calm.append(svg(CHECK), el('span', null, 'Серьёзных проблем не найдено. Подробности — в разделах слева.'));
+      blocks.push(calm);
+    }
+
+    const actions = el('div', 'actions');
+    if (F.report) {
+      const open = el('button', 'btn btn-primary', 'Открыть отчёт');
+      open.addEventListener('click', () => post({ cmd: 'open' }));
+      const reveal = el('button', 'btn btn-secondary', 'Показать в папке');
+      reveal.addEventListener('click', () => post({ cmd: 'reveal' }));
+      actions.append(open, reveal);
+    }
+    const again = el('button', 'btn btn-plain', 'Проверить снова');
+    again.addEventListener('click', () => { $('app').dataset.screen = 'welcome'; });
+    actions.append(again);
+    blocks.push(actions);
+    blocks.push(el('p', 'path selectable', F.report ? 'Отчёт сохранён: ' + F.report : 'Отчёт не сохранён: ' + (F.error || 'неизвестная ошибка')));
+
+    p.append(...blocks);
+    if (!S.revealed) {
+      S.revealed = true;
+      stagger(blocks);
+      tick(num, t.score);
+    } else {
+      num.textContent = t.score;
+    }
+    return p;
+  }
+
+  function sectionPage(i) {
+    const s = S.sections[i];
+    const p = el('div', 'page');
+    p.append(el('div', 'eyebrow', `Раздел ${i + 1} из ${S.labels.length}`));
+    p.append(el('h1', 'display', s.title));
+    const meta = el('p', 'meta');
+    meta.style.display = 'flex';
+    meta.style.alignItems = 'center';
+    meta.style.gap = '8px';
+    meta.append(el('span', 'dot ' + (s.status === 'none' ? '' : s.status)), el('span', null, s.summary));
+    p.append(meta);
+
+    const problems = s.findings.filter((f) => f.sev !== 'ok');
+    const oks = s.findings.filter((f) => f.sev === 'ok');
+
+    if (problems.length) {
+      p.append(el('h2', 'h2 display', 'Найдено'));
+      const wrap = el('div', 'selectable');
+      problems.forEach((f) => {
+        const card = el('div', 'finding');
+        card.append(el('span', 'dot ' + f.sev));
+        const body = el('div', 'item-body');
+        body.append(el('div', 'finding-title', f.title));
+        if (f.details.length) {
+          const ul = el('ul', 'details');
+          f.details.forEach((d) => ul.append(el('li', null, d)));
+          body.append(ul);
+        }
+        if (f.fix) {
+          const fix = el('div', 'fix');
+          fix.append(el('div', 'fix-label', 'Что сделать'), el('div', 'fix-text', f.fix));
+          body.append(fix);
+        }
+        card.append(body);
+        wrap.append(card);
+      });
+      p.append(wrap);
+    }
+
+    if (s.facts.length) {
+      p.append(el('h2', 'h2 display', 'Сведения'));
+      const facts = el('div', 'facts selectable');
+      s.facts.forEach(([k, v]) => {
+        const row = el('div', 'fact');
+        row.append(el('div', 'fact-k', k), el('div', 'fact-v', v));
+        facts.append(row);
+      });
+      p.append(facts);
+    }
+
+    if (oks.length) {
+      p.append(el('h2', 'h2 display', 'В порядке'));
+      const box = el('div', 'oks');
+      oks.forEach((f) => {
+        const row = el('div', 'ok-row');
+        row.append(svg(CHECK), el('span', null, f.title));
+        box.append(row);
+      });
+      p.append(box);
+    }
+
+    if (s.errors.length) {
+      p.append(el('div', 'note selectable', 'Часть данных не получена: ' + s.errors.join('; ')));
+    }
+    return p;
+  }
+
+  // ---------- Messages from the app ----------
+
+  window.vil = {
+    receive(m) {
+      switch (m.type) {
+        case 'init':
+          Object.assign(S, { admin: m.admin, version: m.version, computer: m.computer, labels: m.labels });
+          renderWelcome();
+          break;
+        case 'elevate-failed': {
+          const b = $('elevate');
+          if (b) { b.disabled = false; b.textContent = 'Запросить права'; }
+          $('adminSub').textContent = 'Запрос отклонён — часть проверок будет пропущена';
+          break;
+        }
+        case 'started':
+          S.running.add(m.index);
+          updateNavItem(m.index);
+          if (S.selected === 'overview') updateProgress();
+          break;
+        case 'section':
+          S.sections[m.section.index] = m.section;
+          S.running.delete(m.section.index);
+          updateNavItem(m.section.index);
+          if (S.selected === 'overview') updateProgress();
+          break;
+        case 'done':
+          S.done = true;
+          S.revealed = false;
+          S.final = m;
+          renderNav();
+          if (S.selected === 'overview') renderContent();
+          break;
+      }
+    },
+  };
+
+  document.addEventListener('contextmenu', (e) => {
+    if (!e.target.closest('.selectable')) e.preventDefault();
+  });
+  post({ cmd: 'ready' });
+})();
+</script>
+</body>
+</html>

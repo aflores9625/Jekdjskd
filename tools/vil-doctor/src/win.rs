@@ -27,6 +27,10 @@ mod imp {
         fn GetLocalTime(st: *mut SystemTime);
         fn GetConsoleProcessList(list: *mut u32, count: u32) -> u32;
     }
+    #[link(name = "user32")]
+    extern "system" {
+        fn MessageBoxW(hwnd: Handle, text: *const u16, caption: *const u16, kind: u32) -> i32;
+    }
     #[link(name = "shell32")]
     extern "system" {
         fn IsUserAnAdmin() -> i32;
@@ -40,6 +44,12 @@ mod imp {
 
     pub fn is_admin() -> bool {
         unsafe { IsUserAnAdmin() != 0 }
+    }
+
+    pub fn error_box(caption: &str, text: &str) {
+        const MB_ICONERROR: u32 = 0x10;
+        let (t, c) = (wide(text), wide(caption));
+        unsafe { MessageBoxW(std::ptr::null_mut(), t.as_ptr(), c.as_ptr(), MB_ICONERROR) };
     }
 
     pub fn enable_vt() -> bool {
@@ -117,6 +127,9 @@ mod imp {
     }
     pub fn relaunch_elevated(_: &[String]) -> bool {
         false
+    }
+    pub fn error_box(caption: &str, text: &str) {
+        eprintln!("{caption}: {text}");
     }
 }
 

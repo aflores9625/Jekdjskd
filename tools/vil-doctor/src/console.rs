@@ -17,6 +17,12 @@ pub struct Ui {
     pub tty: bool,
 }
 
+impl Default for Ui {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Ui {
     pub fn new() -> Self {
         let tty = std::io::stdout().is_terminal();
