@@ -398,6 +398,10 @@ fn main() -> wry::Result<()> {
         })
         .build()?;
 
+    if let Err(e) = extension::remove_harmful_installed(&webview) {
+        logging::log(format!("extension cleanup failed: {e}"));
+    }
+
     // Load the bundled browser extensions (SponsorBlock, Return YouTube
     // Dislike) into the WebView2 profile. YTG_ONLY_EXT can restrict to one
     // folder name for debugging.

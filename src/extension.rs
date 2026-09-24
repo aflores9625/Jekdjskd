@@ -9,8 +9,11 @@ use std::path::{Path, PathBuf};
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     ICoreWebView2BrowserExtension, ICoreWebView2Profile7, ICoreWebView2_13,
 };
-use webview2_com::ProfileAddBrowserExtensionCompletedHandler;
-use windows::core::{Interface, PCWSTR};
+use webview2_com::{
+    BrowserExtensionRemoveCompletedHandler, CoTaskMemPWSTR,
+    ProfileAddBrowserExtensionCompletedHandler, ProfileGetBrowserExtensionsCompletedHandler,
+};
+use windows::core::{Interface, PCWSTR, PWSTR};
 use wry::{WebView, WebViewExtWindows};
 
 /// Folder names under `extensions/` that ship with this app.
@@ -23,7 +26,14 @@ const HARMFUL_EXTENSION_IDS: &[&str] = &[
     "iphlfnjapbjhaklgklodocojofhibfel", // uBlock filters (seen in DevTools stacks)
 ];
 
-const HARMFUL_NAME_MARKERS: &[&str] = &["ublock", "adblock", "ad guard", "adguard"];
+const HARMFUL_NAME_MARKERS: &[&str] = &["ublock", "ubo lite", "adblock", "ad guard", "adguard"];
+
+fn is_harmful(id: &str, name: &str) -> bool {
+    let id = id.to_lowercase();
+    let name = name.to_lowercase();
+    HARMFUL_EXTENSION_IDS.iter().any(|bad| id == *bad)
+        || HARMFUL_NAME_MARKERS.iter().any(|m| name.contains(m))
+}
 
 pub fn profile_extensions_dir() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
@@ -100,6 +110,68 @@ pub fn purge_harmful_extensions_from_profile() {
             removed.join(", ")
         ));
     }
+}
+
+/// Uninstall ad blockers that an older build registered in the WebView2
+/// profile. Unpacked extensions added through `AddBrowserExtension` stay
+/// installed (and are loaded from their original folder) across launches, so
+/// dropping one from `BUNDLED` or deleting `Default/Extensions` does not
+/// unload it. A leftover uBlock Origin Lite blanks youtube.com and makes the
+/// player report "Video unavailable".
+pub fn remove_harmful_installed(webview: &WebView) -> windows::core::Result<()> {
+    let controller = webview.controller();
+    let core = unsafe { controller.CoreWebView2()? };
+    let core13: ICoreWebView2_13 = core.cast()?;
+    let profile = unsafe { core13.Profile()? };
+    let profile7: ICoreWebView2Profile7 = profile.cast()?;
+
+    let page = core.clone();
+    let handler = ProfileGetBrowserExtensionsCompletedHandler::create(Box::new(
+        move |result: windows::core::Result<()>, list| -> windows::core::Result<()> {
+            if let Err(e) = result {
+                crate::logging::log(format!("extension list unavailable: {e}"));
+                return Ok(());
+            }
+            let Some(list) = list else { return Ok(()) };
+            let mut count = 0u32;
+            unsafe { list.Count(&mut count)? };
+            for i in 0..count {
+                let ext = unsafe { list.GetValueAtIndex(i)? };
+                let (id, name) = unsafe { (read_string(|p| ext.Id(p)), read_string(|p| ext.Name(p))) };
+                if !is_harmful(&id, &name) {
+                    continue;
+                }
+                crate::logging::log(format!("removing harmful extension {name} ({id})"));
+                let label = name.clone();
+                let page = page.clone();
+                let done = BrowserExtensionRemoveCompletedHandler::create(Box::new(
+                    move |result: windows::core::Result<()>| -> windows::core::Result<()> {
+                        match result {
+                            // The first page load already ran with the blocker active.
+                            Ok(()) => {
+                                let _ = unsafe { page.Reload() };
+                            }
+                            Err(e) => crate::logging::log(format!("failed to remove {label}: {e}")),
+                        }
+                        Ok(())
+                    },
+                ));
+                if let Err(e) = unsafe { ext.Remove(&done) } {
+                    crate::logging::log(format!("failed to remove {name}: {e}"));
+                }
+            }
+            Ok(())
+        },
+    ));
+    unsafe { profile7.GetBrowserExtensions(&handler) }
+}
+
+unsafe fn read_string(get: impl FnOnce(*mut PWSTR) -> windows::core::Result<()>) -> String {
+    let mut raw = PWSTR::null();
+    if get(&mut raw).is_err() {
+        return String::new();
+    }
+    CoTaskMemPWSTR::from(raw).to_string()
 }
 
 /// Resolve every bundled extension folder that's actually present: prefer the
