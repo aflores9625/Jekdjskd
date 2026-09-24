@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07070a">
+<title>VIL</title>
+<style>
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --bg: #07070a;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    font: 100%/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow: hidden;
+    background:
+      radial-gradient(60% 50% at 50% 45%, rgba(124, 92, 255, 0.10), transparent 70%),
+      var(--bg);
+  }
+
+  .stage {
+    display: grid;
+    justify-items: center;
+    gap: 3rem;
+    perspective: 900px;
+  }
+
+  .logo {
+    width: min(72vw, 520px);
+    height: auto;
+    overflow: visible;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  /* Line drawing: every stroke uses pathLength="1", so dash values are normalized. */
+  .stroke {
+    fill: none;
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Gap longer than the dash, so round caps stay hidden at the start of the draw. */
+    stroke-dasharray: 1 1.2;
+    stroke-dashoffset: 0;
+  }
+
+  .glow { opacity: 1; }
+  .sheen-bar { transform: translateX(-90px); opacity: 0; }
+
+  .play .draw .stroke {
+    stroke-dashoffset: 1.1;
+    animation: draw 1000ms var(--ease-in-out) forwards;
+  }
+  /* 80ms stagger between letters. */
+  .play .stroke[data-i="1"] { animation-delay: 80ms; }
+  .play .stroke[data-i="2"] { animation-delay: 160ms; }
+
+  .play .glow {
+    opacity: 0;
+    animation: fade-in 800ms var(--ease-out) 700ms forwards;
+  }
+
+  .play .sheen-bar {
+    animation: sheen 1400ms var(--ease-in-out) 1100ms backwards;
+  }
+
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes fade-in { to { opacity: 1; } }
+  @keyframes sheen {
+    from { transform: translateX(-90px); opacity: 1; }
+    to { transform: translateX(290px); opacity: 1; }
+  }
+
+  .replay {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-top-color: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 0.6rem 1.1rem;
+    min-height: 44px;
+    color: rgba(255, 255, 255, 0.82);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: transform 160ms var(--ease-out), background-color 200ms ease, color 200ms ease;
+  }
+  .replay:active { transform: scale(0.97); }
+  .replay:focus-visible { outline: 2px solid rgba(160, 140, 255, 0.8); outline-offset: 3px; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .replay:hover { background-color: rgba(255, 255, 255, 0.10); color: #fff; }
+  }
+
+  .play .replay {
+    animation: rise 400ms var(--ease-out) 1300ms both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Reduced motion: no drawing, sweep or tilt — a plain cross-fade. */
+  @media (prefers-reduced-motion: reduce) {
+    .play .draw .stroke { animation: none; stroke-dashoffset: 0; }
+    .play .sheen-bar { animation: none; opacity: 0; }
+    .play .glow { animation: fade-in 300ms ease forwards; }
+    .play .logo { animation: fade-in 300ms ease both; opacity: 0; }
+    .play .replay { animation: fade-in 300ms ease both; opacity: 0; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .replay { background: #1a1a20; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  }
+
+  @media (prefers-contrast: more) {
+    .replay { background: #111; border-color: rgba(255, 255, 255, 0.6); color: #fff; }
+  }
+</style>
+</head>
+<body>
+  <main class="stage play" id="stage">
+    <svg class="logo" id="logo" viewBox="0 0 230 110" role="img" aria-label="VIL">
+      <defs>
+        <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e9e4ff"/>
+          <stop offset="0.55" stop-color="#b8a8ff"/>
+          <stop offset="1" stop-color="#7d5fff"/>
+        </linearGradient>
+        <linearGradient id="sheen-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="0.5" stop-color="#fff" stop-opacity="0.95"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="soft" x="-30%" y="-60%" width="160%" height="220%">
+          <feGaussianBlur stdDeviation="9"/>
+        </filter>
+        <mask id="letters" maskUnits="userSpaceOnUse" x="-200" y="-100" width="630" height="310">
+          <g class="draw" stroke="#fff">
+            <path class="stroke" data-i="0" pathLength="1" d="M15 15 L52 95 L89 15"/>
+            <path class="stroke" data-i="1" pathLength="1" d="M127 15 L127 95"/>
+            <path class="stroke" data-i="2" pathLength="1" d="M165 15 L165 95 L215 95"/>
+          </g>
+        </mask>
+      </defs>
+
+      <!-- Static blur; only its opacity animates. -->
+      <g class="glow" filter="url(#soft)" opacity="0.55">
+        <rect x="-20" y="-20" width="270" height="150" fill="#7c5cff" mask="url(#letters)"/>
+      </g>
+
+      <g mask="url(#letters)">
+        <rect x="-20" y="-20" width="270" height="150" fill="url(#ink)"/>
+        <g transform="skewX(-20)">
+          <rect class="sheen-bar" x="0" y="-60" width="60" height="230" fill="url(#sheen-grad)"/>
+        </g>
+      </g>
+    </svg>
+
+    <button class="replay" id="replay" type="button">Повторить</button>
+  </main>
+
+<script>
+  const stage = document.getElementById('stage');
+  const logo = document.getElementById('logo');
+
+  document.getElementById('replay').addEventListener('click', () => {
+    stage.classList.remove('play');
+    void stage.offsetWidth; // restart CSS animations from the first frame
+    stage.classList.add('play');
+  });
+
+  // Decorative pointer tilt on a spring, fine pointers only and never under reduced motion.
+  const canTilt = matchMedia('(hover: hover) and (pointer: fine)');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const MAX_DEG = 8;
+  const STIFFNESS = 100, DAMPING = 10, MASS = 1;
+  const s = { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 };
+  let raf = 0, last = 0;
+
+  function step(t) {
+    const dt = Math.min((t - last) / 1000, 1 / 30); // clamp so a background tab can't explode the sim
+    last = t;
+    for (const [p, v, target] of [['x', 'vx', 'tx'], ['y', 'vy', 'ty']]) {
+      const force = -STIFFNESS * (s[p] - s[target]) - DAMPING * s[v];
+      s[v] += (force / MASS) * dt;
+      s[p] += s[v] * dt;
+    }
+    logo.style.transform = `rotateX(${s.y.toFixed(3)}deg) rotateY(${s.x.toFixed(3)}deg)`;
+    const settled = Math.abs(s.x - s.tx) + Math.abs(s.y - s.ty) + Math.abs(s.vx) + Math.abs(s.vy) < 0.01;
+    raf = settled ? 0 : requestAnimationFrame(step);
+  }
+
+  function setTarget(x, y) {
+    s.tx = x; s.ty = y;
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
+  }
+
+  addEventListener('pointermove', (e) => {
+    if (!canTilt.matches || reduce.matches) return;
+    const nx = e.clientX / innerWidth - 0.5;
+    const ny = e.clientY / innerHeight - 0.5;
+    setTarget(nx * 2 * MAX_DEG, -ny * 2 * MAX_DEG);
+  });
+  document.documentElement.addEventListener('pointerleave', () => setTarget(0, 0));
+  reduce.addEventListener('change', () => { if (reduce.matches) setTarget(0, 0); });
+</script>
+</body>
+</html>
