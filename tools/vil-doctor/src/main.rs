@@ -22,7 +22,8 @@ mod gui {
     use tao::dpi::LogicalSize;
     use tao::event::{Event, WindowEvent};
     use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
-    use tao::window::{Theme, WindowBuilder};
+    use tao::platform::windows::{IconExtWindows, WindowBuilderExtWindows};
+    use tao::window::{Icon, Theme, WindowBuilder};
     use wry::{WebContext, WebViewBuilder};
 
     use vil_doctor::engine::{self, Event as Check};
@@ -53,6 +54,9 @@ mod gui {
         let window = WindowBuilder::new()
             .with_title("VIL Doctor")
             .with_theme(Some(Theme::Light))
+            // Icon ordinal 1 is embedded by build.rs from assets/icon.ico.
+            .with_window_icon(Icon::from_resource(1, None).ok())
+            .with_taskbar_icon(Icon::from_resource(1, None).ok())
             .with_background_color((255, 255, 255, 255))
             .with_inner_size(LogicalSize::new(1080.0, 740.0))
             .with_min_inner_size(LogicalSize::new(900.0, 620.0))

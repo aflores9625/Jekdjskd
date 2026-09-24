@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VIL Doctor</title>
+<title>Проверка Windows</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -18,6 +18,10 @@
     --warning: #b25000;
     --info: #0066cc;
     --ok: #248a3d;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --accent-tint: #e8f2fd;
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --radius: 14px;
     color-scheme: light;
@@ -58,7 +62,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   button:focus-visible, .switch input:focus-visible + .track {
-    outline: 2px solid var(--info);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
@@ -77,13 +81,13 @@
   }
   .btn:active { transform: scale(0.97); }
   .btn[disabled] { opacity: 0.4; pointer-events: none; }
-  .btn-primary { background: var(--text); color: #fff; }
+  .btn-primary { background: var(--accent); color: #fff; }
   .btn-secondary { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line-strong); }
-  .btn-plain { height: auto; padding: 8px 4px; color: var(--info); font-weight: 500; }
+  .btn-plain { height: auto; padding: 8px 4px; color: var(--accent); font-weight: 500; }
   .btn-lg { height: 48px; padding: 0 28px; font-size: 16px; }
 
   @media (hover: hover) and (pointer: fine) {
-    .btn-primary:hover { background: #000; }
+    .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary:hover { background: var(--surface); }
     .btn-plain:hover { text-decoration: underline; text-underline-offset: 3px; }
   }
@@ -98,7 +102,7 @@
     width: 14px; height: 14px; flex: none;
     border-radius: 50%;
     border: 1.5px solid var(--line-strong);
-    border-top-color: var(--text);
+    border-top-color: var(--accent);
     animation: spin 800ms linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -112,16 +116,22 @@
     padding: 40px;
   }
   .welcome-inner { width: min(520px, 100%); }
-  .mark {
-    width: 52px; height: 52px;
-    border-radius: 13px;
-    background: var(--text);
+  /* Stock Lucide "heart-pulse" glyph (ISC) on a flat accent tile. */
+  .logo {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 64px; height: 64px;
+    border-radius: 15px;
+    background: var(--accent);
     color: #fff;
-    display: grid; place-items: center;
-    font: 700 15px/1 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
-    letter-spacing: 0.04em;
-    margin-bottom: 28px;
   }
+  .logo svg { width: 62%; height: 62%; overflow: visible; }
+  .logo path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .logo-sm { width: 30px; height: 30px; border-radius: 8px; }
+  .logo-lg { width: 88px; height: 88px; border-radius: 21px; }
+  .welcome .logo { margin-bottom: 28px; }
+
   .welcome h1 { font-size: 40px; }
   .lede { margin-top: 14px; font-size: 17px; line-height: 1.5; color: var(--text-2); }
 
@@ -161,7 +171,7 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     transition: transform 200ms var(--ease-out);
   }
-  .switch input:checked + .track { background: var(--text); }
+  .switch input:checked + .track { background: var(--accent); }
   .switch input:checked + .track::after { transform: translateX(18px); }
   .switch input:disabled + .track { opacity: 0.4; }
   .switch input:disabled { cursor: default; }
@@ -184,10 +194,9 @@
   }
   .brand {
     display: flex; align-items: center; gap: 10px;
-    padding: 22px 20px 14px;
+    padding: 20px 20px 12px;
     font-weight: 600;
   }
-  .brand .mark { width: 28px; height: 28px; border-radius: 7px; font-size: 9px; margin: 0; }
   nav { flex: 1; overflow-y: auto; padding: 4px 10px 12px; }
   .nav-sep { height: 1px; background: var(--line); margin: 8px 10px; }
   .nav-item {
@@ -201,7 +210,9 @@
   .nav-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nav-item.pending .name { color: var(--text-3); }
   .nav-item.pending { cursor: default; }
-  .nav-item[aria-current="true"] { background: var(--surface-2); font-weight: 600; }
+  .nav-item { transition: background-color 100ms ease; }
+  .nav-item:not(.pending):active { background: var(--surface-2); }
+  .nav-item[aria-current="true"] { background: var(--accent-tint); color: var(--accent); font-weight: 600; }
   @media (hover: hover) and (pointer: fine) {
     .nav-item:not(.pending):not([aria-current="true"]):hover { background: rgba(0, 0, 0, 0.04); }
   }
@@ -210,7 +221,6 @@
   .state.warning { color: var(--warning); }
   .state.none { color: var(--text-3); font-weight: 400; }
   .state svg { display: block; }
-  .state > * { animation: fade 150ms ease both; }
   .side-foot { padding: 14px 20px 18px; font-size: 12px; color: var(--text-3); box-shadow: inset 0 1px 0 var(--line); }
 
   .content { overflow-y: auto; min-height: 0; }
@@ -222,7 +232,7 @@
   .progress { margin-top: 28px; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
   .progress > div {
     height: 100%;
-    background: var(--text);
+    background: var(--accent);
     transform-origin: left;
     transform: scaleX(0);
     transition: transform 400ms var(--ease-out);
@@ -230,10 +240,18 @@
   .now { margin-top: 14px; color: var(--text-2); min-height: 20px; }
   .hint { margin-top: 40px; padding: 16px 18px; border-radius: var(--radius); background: var(--surface); color: var(--text-2); }
 
-  .score { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; }
-  .score-num { font-size: 72px; line-height: 1; }
-  .score-of { font-size: 20px; color: var(--text-3); font-weight: 500; }
-  .verdict { margin-top: 10px; font-size: 22px; }
+  .result-head { display: flex; align-items: center; gap: 28px; }
+  .ring { position: relative; flex: none; width: 132px; height: 132px; }
+  .ring svg { display: block; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 9; }
+  .ring-track { stroke: var(--surface-2); }
+  .ring-fill { stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset 900ms var(--ease-out); }
+  .ring-fill.ok { stroke: var(--ok); }
+  .ring-fill.warning { stroke: var(--warning); }
+  .ring-fill.critical { stroke: var(--critical); }
+  .ring-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 38px; }
+  .ring-num small { display: block; margin-top: -4px; font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--text-3); text-align: center; }
+  .verdict { margin-top: 6px; font-size: 28px; }
 
   .stats { margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .stat { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
@@ -251,7 +269,7 @@
   .item-title { font-weight: 600; }
   .item-where { font-size: 12px; color: var(--text-3); margin-top: 2px; }
   .item-text { margin-top: 6px; color: var(--text-2); }
-  button.item { border-radius: 0; }
+  button.item { border-radius: 0; transition: background-color 150ms ease; }
   button.item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
   button.item:last-child { border-radius: 0 0 var(--radius) var(--radius); }
   button.item:only-child { border-radius: var(--radius); }
@@ -291,13 +309,62 @@
   /* Results arrive once per scan, so they may stagger in. */
   .reveal { animation: enter 300ms var(--ease-out) both; }
 
-  @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .scan-hero { display: flex; align-items: center; gap: 22px; }
 
+  /* ---------- Motion ----------
+     Once per launch (rare tier): welcome entrance with the logo drawing itself.
+     Per scan (occasional): screen change, sidebar cascade, results reveal.
+     Tens of times per scan: section switch — 150ms, barely there. */
+
+  .logo .pulse-trace { display: none; }
+
+  .welcome.intro .logo { animation: logo-in 500ms var(--ease-out) both; }
+  .welcome.intro .logo path { stroke-dasharray: 1 1.2; stroke-dashoffset: 1.1; }
+  .welcome.intro .logo .heart { animation: draw 750ms var(--ease-in-out) 150ms forwards; }
+  .welcome.intro .logo .pulse { animation: draw 550ms var(--ease-in-out) 650ms forwards; }
+  .welcome.intro .welcome-inner > :not(.logo) { animation: enter 450ms var(--ease-out) both; }
+  .welcome.intro .welcome-inner > :nth-child(2) { animation-delay: 120ms; }
+  .welcome.intro .welcome-inner > :nth-child(3) { animation-delay: 180ms; }
+  .welcome.intro .welcome-inner > :nth-child(4) { animation-delay: 240ms; }
+  .welcome.intro .welcome-inner > :nth-child(5) { animation-delay: 300ms; }
+
+  /* Exits are quicker than entrances. */
+  .welcome.leaving { animation: leave 180ms var(--ease-out) forwards; }
+  .welcome.back { animation: fade 200ms ease both; }
+
+  /* While checks run the pulse travels along its track (constant motion → linear). */
+  .logo.scanning .pulse { opacity: 0.35; }
+  .logo.scanning .pulse-trace { display: inline; stroke-dasharray: 0.28 0.72; animation: trace 1400ms linear infinite; }
+
+  .nav-enter .nav-item, .nav-enter .nav-sep { animation: enter 300ms var(--ease-out) both; }
+  .state.pop > * { animation: pop 220ms var(--ease-out) both; }
+  .state .spinner { animation: spin 800ms linear infinite, fade 150ms ease both; }
+
+  .page.swap { animation: swap 150ms var(--ease-out) both; }
+
+  @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fade-out { to { opacity: 0; } }
+  @keyframes leave { to { opacity: 0; transform: scale(0.98); } }
+  @keyframes logo-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+  @keyframes swap { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* Reduced motion: keep fades that explain state changes, drop movement and loops. */
   @media (prefers-reduced-motion: reduce) {
-    [data-screen="scan"] .shell, .reveal { animation-name: fade; animation-duration: 200ms; }
-    .spinner { animation-duration: 2400ms; }
-    .progress > div { transition-duration: 0ms; }
+    [data-screen="scan"] .shell, .reveal, .page.swap, .welcome.back,
+    .welcome.intro .logo, .welcome.intro .welcome-inner > :not(.logo),
+    .nav-enter .nav-item, .nav-enter .nav-sep, .state.pop > * {
+      animation-name: fade; animation-duration: 200ms;
+    }
+    .welcome.leaving { animation-name: fade-out; }
+    .welcome.intro .logo .heart, .welcome.intro .logo .pulse { animation: none; stroke-dashoffset: 0; }
+    .logo.scanning .pulse { opacity: 1; }
+    .logo.scanning .pulse-trace { display: none; }
+    .state .spinner { animation: spin 2400ms linear infinite; }
+    .progress > div, .ring-fill { transition-duration: 0ms; }
   }
 
   @media (prefers-contrast: more) {
@@ -309,7 +376,7 @@
 <div id="app" data-screen="welcome">
   <section class="welcome">
     <div class="welcome-inner">
-      <div class="mark" aria-hidden="true">VIL</div>
+      <div class="logo" aria-hidden="true" data-logo></div>
       <h1 class="display">Проверка Windows</h1>
       <p class="lede">Тринадцать проверок: системные файлы, диски, драйверы, безопасность, обновления и сбои. Программа только читает данные — ничего не меняет.</p>
 
@@ -342,7 +409,7 @@
 
   <div class="shell">
     <aside class="sidebar">
-      <div class="brand"><div class="mark" aria-hidden="true">VIL</div>VIL Doctor</div>
+      <div class="brand"><div class="logo logo-sm" aria-hidden="true" data-logo></div>Проверка Windows</div>
       <nav id="nav" aria-label="Разделы"></nav>
       <div class="side-foot" id="sideFoot"></div>
     </aside>
@@ -357,7 +424,7 @@
   const post = (msg) => window.ipc && window.ipc.postMessage(JSON.stringify(msg));
 
   const S = {
-    admin: false, version: '', computer: '', labels: [],
+    admin: false, version: '', computer: '', labels: [], seen: new Set(),
     sections: [], running: new Set(), done: false, final: null, selected: 'overview',
   };
 
@@ -376,6 +443,18 @@
     return t.content.firstChild;
   }
   const CHECK = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.4 5.8 10 11 4" fill="none" stroke="#248a3d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // Lucide "heart-pulse" (ISC). pathLength=1 keeps the dash maths size-independent.
+  const HEART = 'M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5';
+  const PULSE = 'M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27';
+  const LOGO = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="heart" pathLength="1" d="${HEART}"/><path class="pulse" pathLength="1" d="${PULSE}"/><path class="pulse-trace" pathLength="1" d="${PULSE}"/></svg>`;
+  function logo(cls) {
+    const d = el('div', 'logo ' + (cls || ''));
+    d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = LOGO;
+    return d;
+  }
+  document.querySelectorAll('[data-logo]').forEach((d) => { d.innerHTML = LOGO; });
+
   const CHEV = '<svg class="chev" width="8" height="13" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5 1.5 11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function plural(n, one, few, many) {
@@ -412,23 +491,47 @@
     $('start').disabled = false;
   }
 
+  const welcome = document.querySelector('.welcome');
+  welcome.classList.add('intro');
+
+  function afterAnimation(node, fallbackMs, fn) {
+    let done = false;
+    const finish = () => { if (!done) { done = true; fn(); } };
+    node.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, fallbackMs);
+  }
+
   $('start').addEventListener('click', () => {
     S.sections = S.labels.map(() => null);
     S.running.clear();
+    S.seen = new Set();
     S.done = false;
     S.final = null;
     S.selected = 'overview';
-    $('app').dataset.screen = 'scan';
-    renderNav();
-    renderContent();
+    $('start').disabled = true;
     post({ cmd: 'start', deep: $('deep').checked });
+    welcome.classList.remove('intro', 'back');
+    welcome.classList.add('leaving');
+    afterAnimation(welcome, 260, () => {
+      welcome.classList.remove('leaving');
+      $('app').dataset.screen = 'scan';
+      renderNav(true);
+      renderContent();
+    });
   });
+
+  function backToWelcome() {
+    $('app').dataset.screen = 'welcome';
+    $('start').disabled = false;
+    welcome.classList.add('back');
+    afterAnimation(welcome, 260, () => welcome.classList.remove('back'));
+  }
 
   // ---------- Sidebar ----------
 
-  function stateFor(i) {
+  function stateFor(i, pop) {
     const s = S.sections[i];
-    const box = el('span', 'state');
+    const box = el('span', 'state' + (pop ? ' pop' : ''));
     if (!s) {
       if (S.running.has(i)) box.append(el('span', 'spinner'));
       return box;
@@ -452,54 +555,69 @@
     b.append(el('span', 'name', name));
     if (S.selected === key) b.setAttribute('aria-current', 'true');
     b.addEventListener('click', () => {
-      if (b.classList.contains('pending')) return;
-      S.selected = key;
-      renderNav();
-      renderContent();
-      $('content').scrollTop = 0;
+      if (b.classList.contains('pending') || S.selected === key) return;
+      select(key);
     });
     return b;
   }
 
-  function renderNav() {
+  function renderNav(cascade) {
     const nav = $('nav');
+    nav.classList.toggle('nav-enter', !!cascade);
     const items = [navButton('overview', S.done ? 'Итог' : 'Обзор', false), el('div', 'nav-sep')];
     S.labels.forEach((label, i) => {
       const b = navButton(String(i), label, !S.sections[i]);
       b.append(stateFor(i));
       items.push(b);
     });
+    if (cascade) items.forEach((n, k) => { n.style.animationDelay = `${Math.min(k, 12) * 25}ms`; });
     nav.replaceChildren(...items);
     $('sideFoot').textContent = (S.computer ? S.computer + ' · ' : '') + (S.admin ? 'администратор' : 'без прав администратора');
   }
 
-  function updateNavItem(i) {
+  function updateNavItem(i, pop) {
     const old = $('nav').querySelector(`[data-key="${i}"]`);
-    if (!old) return renderNav();
-    const b = navButton(String(i), S.labels[i], !S.sections[i]);
-    b.append(stateFor(i));
-    old.replaceWith(b);
+    if (!old) return;
+    // Mutate in place so the cascade and hover state aren't restarted.
+    old.classList.toggle('pending', !S.sections[i]);
+    old.querySelector('.state').replaceWith(stateFor(i, pop));
   }
 
   // ---------- Content ----------
 
-  function renderContent() {
+  function select(key) {
+    S.selected = key;
+    $('nav').querySelectorAll('.nav-item').forEach((n) => {
+      if (n.dataset.key === key) n.setAttribute('aria-current', 'true');
+      else n.removeAttribute('aria-current');
+    });
+    renderContent(true);
+    $('content').scrollTop = 0;
+  }
+
+  function renderContent(swap) {
     const c = $('content');
+    let page;
     if (S.selected === 'overview') {
-      c.replaceChildren(S.done ? resultsPage() : progressPage());
-      if (!S.done) updateProgress();
+      page = S.done ? resultsPage() : progressPage();
     } else {
-      c.replaceChildren(sectionPage(Number(S.selected)));
+      page = sectionPage(Number(S.selected));
     }
+    if (swap) page.classList.add('swap');
+    c.replaceChildren(page);
+    if (S.selected === 'overview' && !S.done) updateProgress();
   }
 
   function progressPage() {
     const p = el('div', 'page');
-    p.append(el('div', 'eyebrow', 'Обзор'));
-    p.append(el('h1', 'display', 'Идёт проверка'));
+    const hero = el('div', 'scan-hero');
+    const text = el('div');
+    text.append(el('div', 'eyebrow', 'Обзор'), el('h1', 'display', 'Идёт проверка'));
     const meta = el('p', 'meta');
     meta.id = 'progressMeta';
-    p.append(meta);
+    text.append(meta);
+    hero.append(logo('logo-lg scanning'), text);
+    p.append(hero);
     const bar = el('div', 'progress');
     const fill = el('div');
     fill.id = 'progressFill';
@@ -519,7 +637,7 @@
     if (!meta) return;
     meta.textContent = `Готово ${done} из ${n}`;
     // Paint once at 0 so the first update transitions instead of jumping.
-    requestAnimationFrame(() => { $('progressFill').style.transform = `scaleX(${done / n})`; });
+    requestAnimationFrame(() => { const f = $('progressFill'); if (f) f.style.transform = `scaleX(${done / n})`; });
     const names = [...S.running].filter((i) => !S.sections[i]).map((i) => S.labels[i]);
     $('progressNow').textContent = names.length ? 'Сейчас: ' + names.join(', ') : '';
   }
@@ -543,9 +661,9 @@
     });
   }
 
-  function tick(node, to) {
-    if (reduce.matches) { node.textContent = to; return; }
-    const start = performance.now(), dur = 700;
+  function tick(node, to, dur = 700) {
+    if (reduce.matches || to === 0) { node.textContent = to; return; }
+    const start = performance.now();
     const step = (t) => {
       const k = Math.min(1, (t - start) / dur);
       const eased = 1 - Math.pow(1 - k, 3);
@@ -558,20 +676,30 @@
   function resultsPage() {
     const F = S.final, t = F.totals;
     const p = el('div', 'page');
-    const head = el('div');
-    head.append(el('div', 'eyebrow', 'Итог проверки'));
-    const score = el('div', 'score');
-    const num = el('span', 'score-num display', '0');
-    score.append(num, el('span', 'score-of', '/ 100'));
-    head.append(score);
-    head.append(el('h1', 'verdict display', t.verdict));
+    const head = el('div', 'result-head');
+    const tone = t.critical ? 'critical' : t.warning ? 'warning' : 'ok';
+    const ring = el('div', 'ring');
+    ring.append(svg(`<svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><circle class="ring-track" cx="66" cy="66" r="58"/><circle class="ring-fill ${tone}" cx="66" cy="66" r="58" pathLength="100" stroke-dashoffset="100"/></svg>`));
+    const num = el('span', 'display', '0');
+    const label = el('div', 'ring-num');
+    const inner = el('div');
+    inner.append(num, el('small', null, 'из 100'));
+    label.append(inner);
+    ring.append(label);
+    const text = el('div');
+    text.append(el('div', 'eyebrow', 'Итог проверки'), el('h1', 'verdict display', t.verdict));
     const bits = [F.os, S.computer, `проверено за ${F.seconds} с`].filter(Boolean);
-    head.append(el('p', 'meta', bits.join(' · ')));
+    text.append(el('p', 'meta', bits.join(' · ')));
+    head.append(ring, text);
+    const fill = ring.querySelector('.ring-fill');
 
     const stats = el('div', 'stats');
+    const counters = [];
     [['critical', t.critical, 'Критично'], ['warning', t.warning, 'Внимание'], ['info', t.info, 'Советы'], ['ok', t.ok, 'В порядке']].forEach(([k, n, label]) => {
       const card = el('div', 'stat');
-      card.append(el('div', 'stat-num display', String(n)));
+      const numEl = el('div', 'stat-num display', String(n));
+      counters.push([numEl, n]);
+      card.append(numEl);
       const l = el('div', 'stat-label');
       l.append(el('span', 'dot ' + k), el('span', null, label));
       card.append(l);
@@ -590,7 +718,7 @@
         body.append(el('div', 'item-title', f.title), el('div', 'item-where', section));
         if (f.fix) body.append(el('div', 'item-text', f.fix));
         b.append(body, svg(CHEV));
-        b.addEventListener('click', () => { S.selected = String(i); renderNav(); renderContent(); $('content').scrollTop = 0; });
+        b.addEventListener('click', () => select(String(i)));
         list.append(b);
       });
       blocks.push(list);
@@ -611,24 +739,32 @@
       actions.append(open, reveal);
     }
     const again = el('button', 'btn btn-plain', 'Проверить снова');
-    again.addEventListener('click', () => { $('app').dataset.screen = 'welcome'; });
+    again.addEventListener('click', backToWelcome);
     actions.append(again);
     blocks.push(actions);
     blocks.push(el('p', 'path selectable', F.report ? 'Отчёт сохранён: ' + F.report : 'Отчёт не сохранён: ' + (F.error || 'неизвестная ошибка')));
 
     p.append(...blocks);
+    const settle = () => { fill.style.strokeDashoffset = String(100 - t.score); };
     if (!S.revealed) {
       S.revealed = true;
-      stagger(blocks);
-      tick(num, t.score);
+      stagger(blocks, 50);
+      tick(num, t.score, 900);
+      counters.forEach(([n, v]) => { n.textContent = '0'; tick(n, v, 700); });
+      // Two frames: the ring must paint at 100 before the transition can run.
+      requestAnimationFrame(() => requestAnimationFrame(settle));
     } else {
       num.textContent = t.score;
+      fill.style.transition = 'none';
+      settle();
     }
     return p;
   }
 
   function sectionPage(i) {
     const s = S.sections[i];
+    const first = !S.seen.has(i);
+    S.seen.add(i);
     const p = el('div', 'page');
     p.append(el('div', 'eyebrow', `Раздел ${i + 1} из ${S.labels.length}`));
     p.append(el('h1', 'display', s.title));
@@ -663,6 +799,7 @@
         card.append(body);
         wrap.append(card);
       });
+      if (first) stagger([...wrap.children], 30);
       p.append(wrap);
     }
 
@@ -711,21 +848,22 @@
         }
         case 'started':
           S.running.add(m.index);
-          updateNavItem(m.index);
+          updateNavItem(m.index, false);
           if (S.selected === 'overview') updateProgress();
           break;
         case 'section':
           S.sections[m.section.index] = m.section;
           S.running.delete(m.section.index);
-          updateNavItem(m.section.index);
+          updateNavItem(m.section.index, true);
           if (S.selected === 'overview') updateProgress();
           break;
         case 'done':
           S.done = true;
           S.revealed = false;
           S.final = m;
-          renderNav();
-          if (S.selected === 'overview') renderContent();
+          const overview = $('nav').querySelector('[data-key="overview"] .name');
+          if (overview) overview.textContent = 'Итог';
+          if (S.selected === 'overview') renderContent(true);
           break;
       }
     },
