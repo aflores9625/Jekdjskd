@@ -1,0 +1,30 @@
+[package]
+name = "youtube-glass"
+version = "0.2.0"
+edition = "2021"
+description = "YouTube desktop wrapper with a Liquid Glass theme"
+
+[dependencies]
+wry = "0.45"
+tao = "0.30"
+webview2-com = "0.33"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
+    "Win32_System_WinRT",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_Security",
+    "Media",
+] }
+tray-icon = "0.19"
+discord-rich-presence = "0.2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"
