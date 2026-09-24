@@ -1,0 +1,17 @@
+[package]
+name = "vil-doctor"
+version = "1.0.0"
+edition = "2021"
+description = "Read-only Windows health check that writes a detailed text report"
+
+# Standalone crate: not part of the youtube-glass build.
+[workspace]
+
+[dependencies]
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
