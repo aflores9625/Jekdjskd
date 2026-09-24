@@ -14,7 +14,15 @@
     function eligible() {
         return location.pathname === '/watch' && !document.hidden && !document.fullscreenElement;
     }
-    function hide() { if (root) root.style.opacity = '0'; }
+    let shownOpacity = '';
+    // Skip redundant writes: every write restarts the opacity transition.
+    function setOpacity(value) {
+        const next = value === 0 ? '0' : value.toFixed(2);
+        if (!root || next === shownOpacity) return;
+        shownOpacity = next;
+        root.style.opacity = next;
+    }
+    function hide() { setOpacity(0); }
     function cancel() {
         if (callback !== null && video && video.cancelVideoFrameCallback) video.cancelVideoFrameCallback(callback);
         callback = null;
@@ -123,6 +131,8 @@
         if (readBlocked || now - lastAnalysis < 500) return;
         lastAnalysis = now;
         let pixels;
+        // CPU readback only here (2x/s); per-frame drawing stays on the GPU.
+        rawContext.drawImage(video, 0, 0, sampleWidth, sampleHeight);
         try { pixels = rawContext.getImageData(0, 0, sampleWidth, sampleHeight).data; }
         catch (_) { readBlocked = true; return; }
         const maxTop = Math.floor(sampleHeight * 0.45), maxLeft = Math.floor(sampleWidth * 0.45);
@@ -164,13 +174,13 @@
         const metrics = layout();
         if (!metrics) { hide(); return; }
         const now = performance.now();
-        if (lastFrame) root.style.opacity = String((0.58 + Math.sqrt(Math.max(0, luminance)) * 0.24) * (video.paused || video.ended ? 0.7 : 1));
+        if (lastFrame) setOpacity((0.58 + Math.sqrt(Math.max(0, luminance)) * 0.24) * (video.paused || video.ended ? 0.7 : 1));
         if (!force && (now - lastFrame < (motion.matches ? 125 : 32) || video.currentTime === lastMedia)) { schedule(); return; }
         try {
-            rawContext.drawImage(video, 0, 0, sampleWidth, sampleHeight);
             analyze(now);
+            const scaleX = video.videoWidth / sampleWidth, scaleY = video.videoHeight / sampleHeight;
             sampleContext.globalAlpha = lastFrame ? 1 - Math.exp(-Math.max(1, now - lastFrame) / (motion.matches ? 450 : 140)) : 1;
-            sampleContext.drawImage(raw, crop[0], crop[1], crop[2], crop[3], 0, 0, sampleWidth, sampleHeight);
+            sampleContext.drawImage(video, crop[0] * scaleX, crop[1] * scaleY, crop[2] * scaleX, crop[3] * scaleY, 0, 0, sampleWidth, sampleHeight);
             const edgeX = metrics.edgeX, edgeY = metrics.edgeY;
             const middleWidth = width - 2 * edgeX, middleHeight = height - 2 * edgeY;
             context.clearRect(0, 0, width, height);
@@ -182,7 +192,7 @@
                 context.drawImage(sample, corner[0], corner[1], 4, 3, corner[2], corner[3], edgeX, edgeY);
             });
             lastFrame = now; lastMedia = video.currentTime;
-            root.style.opacity = String((0.58 + Math.sqrt(Math.max(0, luminance)) * 0.24) * (video.paused || video.ended ? 0.7 : 1));
+            setOpacity((0.58 + Math.sqrt(Math.max(0, luminance)) * 0.24) * (video.paused || video.ended ? 0.7 : 1));
         } catch (_) { failed = true; hide(); return; }
         schedule();
     }

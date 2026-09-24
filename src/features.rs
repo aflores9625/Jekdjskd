@@ -523,23 +523,41 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
         function onMutation() {{
             trackVideoElement();
             ensureCinemaButton();
-            syncFsLock();
+            watchFsTargets();
             // The consent lightbox renders long after DOMContentLoaded, so a
             // one-shot check at startup never found it.
             ensureConsentButtons();
         }}
 
+        // Fullscreen is signalled by attributes on two elements only. Watch
+        // those directly (synchronously, before paint - no scroll jump)
+        // instead of every class change in the document.
+        var fsObserver = new MutationObserver(syncFsLock);
+        var fsPlayer = null, fsFlexy = null;
+        function watchFsTargets() {{
+            var p = document.querySelector('#movie_player');
+            var f = document.querySelector('ytd-watch-flexy');
+            if (p !== fsPlayer || f !== fsFlexy) {{
+                fsObserver.disconnect();
+                fsPlayer = p; fsFlexy = f;
+                if (p) fsObserver.observe(p, {{ attributes: true, attributeFilter: ['class'] }});
+                if (f) fsObserver.observe(f, {{ attributes: true, attributeFilter: ['fullscreen'] }});
+            }}
+            syncFsLock();
+        }}
+        document.addEventListener('fullscreenchange', syncFsLock);
+
         // The subtree observer fires hundreds of times per second on a busy
-        // watch page; the handlers only need to run once per frame. Coalesce
-        // mutation bursts into a single rAF-aligned pass.
+        // page. None of the handlers are frame-critical, so run them at most
+        // every 150 ms, off the animation frame path.
         var mutationQueued = false;
         function onMutationThrottled() {{
             if (mutationQueued) return;
             mutationQueued = true;
-            requestAnimationFrame(function () {{
+            setTimeout(function () {{
                 mutationQueued = false;
                 onMutation();
-            }});
+            }}, 150);
         }}
 
         var observing = false;
@@ -552,8 +570,6 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
             new MutationObserver(onMutationThrottled).observe(document.documentElement, {{
                 childList: true,
                 subtree: true,
-                attributes: true,
-                attributeFilter: ['class'],
             }});
         }}
         ensureObserver();
@@ -656,7 +672,7 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
             el.style.cssText =
                 'position:fixed;top:76px;left:50%;transform:translateX(-50%) translateY(-6px);' +
                 'display:flex;align-items:center;gap:12px;' +
-                'background:rgba(18,18,18,0.88);backdrop-filter:blur(14px);' +
+                'background:rgba(18,18,18,0.94);' +
                 'border:1px solid rgba(255,255,255,0.10);color:#f5f5f5;' +
                 'padding:10px 18px;border-radius:999px;' +
                 'font:500 13px "Roboto","Segoe UI",sans-serif;' +
@@ -679,8 +695,9 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
                 'width:130px;height:4px;border-radius:999px;background:rgba(255,255,255,0.16);overflow:hidden;';
             var barFill = document.createElement('div');
             barFill.style.cssText =
-                'height:100%;width:0%;border-radius:999px;background:#f5f5f5;' +
-                'transition:width 0.16s cubic-bezier(0.22,1,0.36,1);';
+                'height:100%;width:100%;border-radius:999px;background:#f5f5f5;' +
+                'transform:scaleX(0);transform-origin:left;' +
+                'transition:transform 0.16s cubic-bezier(0.22,1,0.36,1);';
             barWrap.appendChild(barFill);
 
             var label = document.createElement('span');
@@ -728,7 +745,7 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
             osd.icon.style.display = '';
             osd.barWrap.style.display = '';
             osd.path.setAttribute('d', vol === 0 ? ICON_MUTE : ICON_VOL);
-            osd.barFill.style.width = Math.round(vol * 100) + '%';
+            osd.barFill.style.transform = 'scaleX(' + Math.max(0, Math.min(1, vol)).toFixed(3) + ')';
             osd.label.textContent = Math.round(vol * 100) + '%';
             osdShow();
         }}
@@ -765,7 +782,7 @@ pub fn script(block_ads: bool, cinema: bool, prefer_hd: bool) -> String {
             panel.style.cssText =
                 'position:absolute;right:12px;bottom:60px;z-index:9999;' +
                 'display:flex;flex-direction:column;gap:2px;min-width:180px;' +
-                'background:rgba(18,18,18,0.92);backdrop-filter:blur(14px);' +
+                'background:rgba(18,18,18,0.96);' +
                 'border:1px solid rgba(255,255,255,0.10);border-radius:14px;' +
                 'padding:8px;box-shadow:0 12px 40px rgba(0,0,0,0.55);' +
                 'font:500 13px "Roboto","Segoe UI",sans-serif;color:#f5f5f5;';

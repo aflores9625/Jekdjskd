@@ -60,10 +60,13 @@
         }
         const active = !!document.pictureInPictureElement;
         const label = (active ? 'Вернуть видео в окно' : 'Картинка в картинке') + ' (Alt+P)';
-        button.title = label;
-        button.setAttribute('aria-label', label);
-        button.setAttribute('aria-pressed', String(active));
-        button.disabled = video.disablePictureInPicture;
+        // Called on DOM churn; only touch attributes that actually changed.
+        if (button.title !== label) {
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            button.setAttribute('aria-pressed', String(active));
+        }
+        if (button.disabled !== video.disablePictureInPicture) button.disabled = video.disablePictureInPicture;
     }
     document.addEventListener('keydown', function (event) {
         if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat || event.defaultPrevented) return;
@@ -83,7 +86,7 @@
     function queueSync() {
         if (queued) return;
         queued = true;
-        requestAnimationFrame(function () { queued = false; syncControls(); });
+        setTimeout(function () { queued = false; syncControls(); }, 150);
     }
     function start() {
         if (!document.documentElement) return;

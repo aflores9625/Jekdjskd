@@ -91,7 +91,6 @@ const CSS: &str = r#"
     --lg-border: rgba(255, 255, 255, 0.12);
     --lg-text: #f5f5f5;
     --lg-shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.38);
-    --lg-blur: blur(20px) saturate(1.2);
     --lg-radius: 16px;
     --lg-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -157,10 +156,13 @@ ytd-watch-flexy:not([fullscreen]) #secondary {
     z-index: 1;
 }
 
+/* No backdrop-filter on large fixed/scrolling surfaces: the blur is
+   recomputed for every scrolled frame and was the main source of jank.
+   Near-opaque fills look the same over the dark page. */
 #masthead-container {
-    background: rgba(15, 15, 15, 0.78) !important;
-    -webkit-backdrop-filter: var(--lg-blur) !important;
-    backdrop-filter: var(--lg-blur) !important;
+    background: rgba(15, 15, 15, 0.97) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
     border-bottom: 1px solid rgba(255,255,255,0.10) !important;
     box-shadow: 0 4px 28px rgba(0,0,0,0.55) !important;
 }
@@ -201,11 +203,12 @@ yt-chip-cloud-chip-renderer[selected], yt-chip-cloud-chip-renderer[aria-selected
 /* The home chip bar is fixed under the masthead. Without its own backdrop
    the translucent chips floated over the video grid while scrolling. */
 #chips-wrapper.ytd-feed-filter-chip-bar-renderer,
+#frosted-glass,
 #frosted-glass.with-chipbar,
 #frosted-glass.loading-with-chipbar {
-    background: rgba(15, 15, 15, 0.94) !important;
-    -webkit-backdrop-filter: var(--lg-blur) !important;
-    backdrop-filter: var(--lg-blur) !important;
+    background: rgba(15, 15, 15, 0.97) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
 }
 #chips-wrapper.ytd-feed-filter-chip-bar-renderer {
     z-index: 2019 !important;
@@ -233,12 +236,10 @@ ytd-comments#comments, ytd-watch-metadata {
 }
 
 #lg-analytics-panel {
-    background: rgba(24, 24, 24, 0.58) !important;
+    background: rgba(24, 24, 24, 0.9) !important;
     border: 1px solid rgba(255,255,255,0.075) !important;
     border-radius: 18px !important;
     box-shadow: 0 16px 44px rgba(0,0,0,0.34) !important;
-    -webkit-backdrop-filter: blur(22px) saturate(1.18) !important;
-    backdrop-filter: blur(22px) saturate(1.18) !important;
     margin-bottom: 16px !important;
 }
 
