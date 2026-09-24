@@ -198,6 +198,20 @@ yt-chip-cloud-chip-renderer[selected], yt-chip-cloud-chip-renderer[aria-selected
     color: #0d0d0d !important;
 }
 
+/* The home chip bar is fixed under the masthead. Without its own backdrop
+   the translucent chips floated over the video grid while scrolling. */
+#chips-wrapper.ytd-feed-filter-chip-bar-renderer,
+#frosted-glass.with-chipbar,
+#frosted-glass.loading-with-chipbar {
+    background: rgba(15, 15, 15, 0.94) !important;
+    -webkit-backdrop-filter: var(--lg-blur) !important;
+    backdrop-filter: var(--lg-blur) !important;
+}
+#chips-wrapper.ytd-feed-filter-chip-bar-renderer {
+    z-index: 2019 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
 ytd-rich-grid-media #thumbnail, ytd-thumbnail, ytd-thumbnail img {
     border-radius: 12px !important;
     overflow: hidden !important;
