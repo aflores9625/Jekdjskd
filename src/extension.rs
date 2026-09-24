@@ -36,11 +36,8 @@ fn is_harmful(id: &str, name: &str) -> bool {
 }
 
 pub fn profile_extensions_dir() -> Option<PathBuf> {
-    let exe = std::env::current_exe().ok()?;
-    let dir = exe.parent()?;
-    let folder = format!("{}.WebView2", exe.file_name()?.to_string_lossy());
     Some(
-        dir.join(folder)
+        crate::bundle::webview_data_dir()
             .join("EBWebView")
             .join("Default")
             .join("Extensions"),
@@ -178,29 +175,8 @@ unsafe fn read_string(get: impl FnOnce(*mut PWSTR) -> windows::core::Result<()>)
 /// copy next to the executable, fall back to the path baked in at compile
 /// time (the project tree, for `cargo run` during development).
 pub fn bundled_paths() -> Vec<PathBuf> {
-    BUNDLED
-        .iter()
-        .filter_map(|name| resolve(name))
-        .collect()
-}
-
-fn resolve(name: &str) -> Option<PathBuf> {
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let p = dir.join("extensions").join(name);
-            if p.join("manifest.json").exists() {
-                return Some(p);
-            }
-        }
-    }
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("extensions")
-        .join(name);
-    if p.join("manifest.json").exists() {
-        Some(p)
-    } else {
-        None
-    }
+    debug_assert_eq!(BUNDLED, crate::bundle::EXTENSION_NAMES);
+    crate::bundle::extension_dirs()
 }
 
 /// Install (and load) an unpacked extension from `folder` into the webview's

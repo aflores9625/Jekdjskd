@@ -3,6 +3,7 @@
 
 mod ambient;
 mod analytics;
+mod bundle;
 mod discord;
 mod extension;
 mod features;
@@ -214,7 +215,10 @@ fn main() -> wry::Result<()> {
     let media_for_title = media_controls.clone();
     let media_for_ipc = media_controls.clone();
 
-    let mut webview_builder = WebViewBuilder::new(&window).with_url("https://www.youtube.com");
+    let mut web_context = wry::WebContext::new(Some(bundle::webview_data_dir()));
+    let mut webview_builder = WebViewBuilder::new(&window)
+        .with_web_context(&mut web_context)
+        .with_url("https://www.youtube.com");
     for script in &parts {
         webview_builder = webview_builder.with_initialization_script(script);
     }
