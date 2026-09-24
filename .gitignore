@@ -1,0 +1,8 @@
+/target/
+*.exe
+*.pdb
+*.WebView2/
+.mimosa/
+.hoplite/
+run_*.txt
+sb_*.txt
